@@ -1,43 +1,26 @@
 module.exports = {
-  // 搜索
-  "/": async ({
-    req,
-    res,
-    request,
-    cache
-  }) => {
-    let {
+  // 搜索功能
+  "/": async ({ req, res, request, cache }) => {
+    const {
       pageNo = 1,
       pageSize = 20,
       key,
-      t = 0, // 0：单曲，2：歌单，7：歌词，8：专辑，9：歌手，12：mv
+      t = 0, // t 参数的搜索类型：0-单曲，1-歌手，2-专辑，3-歌单，4-MV，7-歌词，8-用户
       raw,
     } = req.query;
-    let total = 0;
-
-    if (!key) {
-      return res.send({
-        result: 500,
-        errMsg: "关键词不能为空",
-      });
-    }
-
     const cacheKey = `search_${key}_${pageNo}_${pageSize}_${t}`;
     const cacheData = cache.get(cacheKey);
     if (cacheData) {
-      res && res.send(cacheData);
-      return cacheData;
+      res.send(cacheData);
+      return;
     }
-    const url = "https://u.y.qq.com/cgi-bin/musicu.fcg";
-    // 0：单曲
-    // 1：歌手
-    // 2：专辑
-    // 3：歌单
-    // 4：mv
-    // 7：歌词
-    // 8：用户
 
-    let data = {
+    if (!key) {
+      return res.status(500).send({ result: 500, errMsg: "关键词不能为空" });
+    }
+
+    const url = "https://u.y.qq.com/cgi-bin/musicu.fcg";
+    const data = {
       "music.search.SearchCgiService": {
         method: "DoSearchForQQMusicDesktop",
         module: "music.search.SearchCgiService",
@@ -50,118 +33,85 @@ module.exports = {
       },
     };
 
-    const result = await request({
-      url,
-      method: "post",
-      data,
-      headers: {
-        Referer: "https://y.qq.com",
-      },
-    });
+    try {
+      const result = await request({
+        url,
+        method: "post",
+        data,
+        headers: { Referer: "https://y.qq.com" },
+      });
 
-    if (Number(raw)) {
-      return res.send(result);
+      if (raw) {
+        return res.send(result);
+      }
+
+      const { keyword, sum, perpage, curpage } = result["music.search.SearchCgiService"].data.meta;
+      const searchResult = result["music.search.SearchCgiService"].data.body.song.list || [];
+      const list = searchResult.map(item => ({
+        singer: item.singer,
+        name: item.title,
+        songid: item.id,
+        songmid: item.mid,
+        songname: item.title,
+        albumid: item.album.id,
+        albummid: item.album.mid,
+        albumname: item.album.name,
+        interval: item.interval,
+        strMediaMid: item.file.media_mid,
+        size128: item.file.size_128mp3,
+        size320: item.file.size_320mp3,
+        sizeape: item.file.size_ape,
+        sizeflac: item.file.size_flac,
+      }));
+
+      const pageNo = curpage;
+      const pageSize = perpage;
+      const total = sum;
+
+      const resData = {
+        result: 100,
+        data: {
+          list,
+          pageNo,
+          pageSize,
+          total,
+          key: keyword || key,
+          t,
+        },
+      };
+      cache.set(cacheKey, resData, 120);
+      res.send(resData);
+    } catch (error) {
+      res.status(500).send({ result: 500, errMsg: "系统异常" });
     }
-
-    // 下面是数据格式的美化
-    const {
-      keyword,
-      sum,
-      perpage,
-      curpage
-    } =
-      result["music.search.SearchCgiService"].data.meta;
-
-    const searchResult =
-      result["music.search.SearchCgiService"].data.body.song.list || [];
-    //   (keyMap[t] ? result.data[keyMap[t]] : result.data) || [];
-    const list = searchResult.map((item) => ({
-      singer: item.singer, // 、
-      name: item.title,
-      songid: item.id,
-      songmid: item.mid,
-      songname: item.title,
-
-      albumid: item.album.id,
-      albummid: item.album.mid,
-      albumname: item.album.name,
-      interval: item.interval,
-
-      strMediaMid: item.file.media_mid,
-      size128: item.file.size_128mp3,
-      size320: item.file.size_320mp3,
-      sizeape: item.file.size_ape,
-      sizeflac: item.file.size_flac,
-    }));
-
-    pageNo = curpage;
-    pageSize = perpage;
-    total = sum;
-
-    const resData = {
-      result: 100,
-      data: {
-        list,
-        pageNo,
-        pageSize,
-        total,
-        key: keyword || key,
-        t,
-      },
-      // header: req.header(),
-      // req: JSON.parse(JSON.stringify(req)),
-    };
-    cache.set(cacheKey, resData, 120);
-    res.send && res.send(resData);
-    return resData;
   },
 
-  // 热搜词
-  '/hot': async ({
-    req,
-    res,
-    request
-  }) => {
-    const {
-      raw
-    } = req.query;
+  // 获取热搜词
+  '/hot': async ({ req, res, request }) => {
+    const { raw } = req.query;
     const result = await request({
       url: 'https://c.y.qq.com/splcloud/fcgi-bin/gethotkey.fcg',
     });
-    if (Number(raw)) {
+
+    if (raw) {
       return res.send(result);
     }
-    res.send({
-      result: 100,
-      data: result.data.hotkey,
-    });
+    res.send({ result: 100, data: result.data.hotkey });
   },
 
   // 快速搜索
-  '/quick': async ({
-    req,
-    res,
-    request
-  }) => {
-    const {
-      raw,
-      key
-    } = req.query;
+  '/quick': async ({ req, res, request }) => {
+    const { raw, key } = req.query;
     if (!key) {
-      return res.send({
-        result: 500,
-        errMsg: 'key ?',
-      });
+      return res.status(500).send({ result: 500, errMsg: "关键词不能为空" });
     }
     const result = await request(
-      `https://c.y.qq.com/splcloud/fcgi-bin/smartbox_new.fcg?key=${key}&g_tk=5381`,
+      `https://c.y.qq.com/splcloud/fcgi-bin/smartbox_new.fcg?key=${encodeURIComponent(key)}&g_tk=5381`,
     );
-    if (Number(raw)) {
+
+    if (raw) {
       return res.send(result);
     }
-    return res.send({
-      result: 100,
-      data: result.data,
-    });
+    res.send({ result: 100, data: result.data });
   },
 };
