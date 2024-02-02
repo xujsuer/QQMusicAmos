@@ -1,4 +1,4 @@
-# QQMusicApi
+# QQMusicAmos
 
 这是一个基于 Express + Axios 的 Nodejs 项目，一切仅供学习参考，该支持的还是要支持的，不然杰伦喝不起奶茶了。
 
@@ -8,8 +8,6 @@
 对于所有处理过的返回数据，都会包含 `result`，`100` 表示成功，`500` 表示穿参错误，`400` 为 node 捕获的未知异常，`301` 表示缺少用户登陆的 cookie
 
 关于如何在服务器上存储 cookie，可以查看接口 [设置用户Cookie](#设置用户Cookie)
-
-灵感来源：[Binaryify/NeteaseCloudMusicApi](https://github.com/Binaryify/NeteaseCloudMusicApi)
 
 ## NPM 使用
 

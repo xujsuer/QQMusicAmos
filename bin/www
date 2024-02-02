@@ -1,52 +1,52 @@
 #!/usr/bin/env node
 
 /**
- * Module dependencies.
+ * 模块依赖
  */
 
-var app = require('../app');
-var debug = require('debug')('qqmusicapi:server');
-var http = require('http');
-var config = require('./config');
+var app = require('../app'); // 导入app模块
+var debug = require('debug')('qqmusicapi:server'); // 导入debug模块
+var http = require('http'); // 导入http模块
+var config = require('./config'); // 导入config模块
 
 /**
- * Get port from environment and store in Express.
+ * 从环境变量中获取端口号并存储在Express中
  */
 
-var port = normalizePort(process.env.PORT || config.port);
-global.QQ = process.env.QQ || config.qq;
-global.PORT = port;
-global.useDataStatistics = config.useDataStatistics;
-app.set('port', port);
+var port = normalizePort(process.env.PORT || config.port); // 获取环境变量中的端口号或配置文件中的端口号
+global.QQ = process.env.QQ || config.qq; // 获取环境变量中的QQ号或配置文件中的QQ号
+global.PORT = port; // 将端口号存储在全局变量PORT中
+global.useDataStatistics = config.useDataStatistics; // 将是否使用数据统计功能存储在全局变量useDataStatistics中
+app.set('port', port); // 将端口号设置给app
 
 /**
- * Create HTTP server.
+ * 创建HTTP服务器
  */
 
-var server = http.createServer(app);
+var server = http.createServer(app); // 创建服务器
 
 /**
- * Listen on provided port, on all network interfaces.
+ * 监听指定的端口号，监听所有网络接口
  */
 
-server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
+server.listen(port); // 监听端口号
+server.on('error', onError); // 监听服务器错误事件
+server.on('listening', onListening); // 监听服务器监听事件
 
 /**
- * Normalize a port into a number, string, or false.
+ * 将端口号转换为数字、字符串或false
  */
 
 function normalizePort(val) {
-  var port = parseInt(val, 10);
+  var port = parseInt(val, 10); // 将字符串转换为整数
 
   if (isNaN(port)) {
-    // named pipe
+    // 如果转换结果为NaN，则说明是命名管道
     return val;
   }
 
   if (port >= 0) {
-    // port number
+    // 如果端口号大于等于0，则说明是有效的端口号
     return port;
   }
 
@@ -54,7 +54,7 @@ function normalizePort(val) {
 }
 
 /**
- * Event listener for HTTP server "error" event.
+ * 监听服务器错误事件
  */
 
 function onError(error) {
@@ -63,17 +63,17 @@ function onError(error) {
   }
 
   var bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
+    ? '命名管道 ' + port
+    : '端口号 ' + port;
 
-  // handle specific listen errors with friendly messages
+  // 处理特定的监听错误，输出友好的错误信息
   switch (error.code) {
     case 'EACCES':
-      console.error(bind + ' requires elevated privileges');
+      console.error(bind + ' 需要管理员权限');
       process.exit(1);
       break;
     case 'EADDRINUSE':
-      console.error(bind + ' is already in use');
+      console.error(bind + ' 已经被使用');
       process.exit(1);
       break;
     default:
@@ -82,15 +82,15 @@ function onError(error) {
 }
 
 /**
- * Event listener for HTTP server "listening" event.
+ * 监听服务器监听事件
  */
 
 function onListening() {
   var addr = server.address();
   var bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port;
-  debug('Listening on ' + bind);
-  console.log(`Listening on \n http://localhost:${addr.port} \n http://127.0.0.1:${addr.port}`);
+    ? '命名管道 ' + addr
+    : '端口号 ' + addr.port;
+  debug('正在监听 ' + bind);
+  console.log(`正在监听\n http://localhost:${addr.port}\n http://127.0.0.1:${addr.port}`);
   console.log(`配置QQ号/wxuin 为：${global.QQ}`);
 }

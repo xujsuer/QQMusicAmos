@@ -31,8 +31,15 @@ yarn start:docker
 ### npm
 
 ```shell script
+npm install qq-music-amos
+```
+or
+
+```shell script
 yarn add qq-music-amos
 ```
+
+
 
 #### 接口调用
 
